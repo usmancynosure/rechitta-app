@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../theme/app_images.dart';
 
 /// Mock briefing content mirroring the rechitta.com product mockups.
 class MockData {
@@ -23,6 +24,7 @@ class MockData {
             'Designed by atelier Vanguarde, these residences redefine coastal '
             'luxury with zero-edge views & integrated smart-concierge technology.',
         gradient: [Color(0xFF3E4A63), Color(0xFF1B2436)],
+        imageAsset: AppImages.harbourTowerDusk,
         stats: [
           PropertyStat(value: 'AED 2.4M', label: 'Starting From'),
           PropertyStat(value: '8.4%', label: 'Yield Projection'),
@@ -51,6 +53,7 @@ class MockData {
 
   static const List<Suggestion> suggestions = [
     Suggestion('Expected ROI?', Icons.trending_up_rounded),
+    Suggestion('Floor plan?', Icons.grid_on_rounded),
     Suggestion('Family living rating?', Icons.family_restroom_rounded),
     Suggestion('Payment plans?', Icons.payments_outlined),
     Suggestion('Handover date?', Icons.event_available_outlined),
@@ -76,7 +79,26 @@ class MockData {
         ),
       );
     }
-    if (p.contains('payment') || p.contains('plan')) {
+    if (p.contains('floor') || p.contains('layout') || p.contains('plan') &&
+        !p.contains('payment')) {
+      return const ChatMessage(
+        sender: Sender.ai,
+        text:
+            'Here is the Type A 2-bedroom floor plan — a harbour-facing layout '
+            'with dual en-suites.',
+        attachment: FloorPlanCard(
+          title: '2 Bedroom',
+          imageAsset: AppImages.twoBedTypeA,
+          specs: [
+            FloorPlanSpec(icon: Icons.crop_free_rounded, value: '1,220 SQ FT', label: 'Area'),
+            FloorPlanSpec(icon: Icons.sell_outlined, value: 'AED 0.8M', label: 'Price'),
+            FloorPlanSpec(icon: Icons.sailing_outlined, value: 'Harbour Facing', label: 'View'),
+            FloorPlanSpec(icon: Icons.meeting_room_outlined, value: 'Dual En-suite', label: 'Baths'),
+          ],
+        ),
+      );
+    }
+    if (p.contains('payment')) {
       return const ChatMessage(
         sender: Sender.ai,
         text:
@@ -111,6 +133,7 @@ class MockData {
             'Designed by atelier Vanguarde, these residences redefine coastal '
             'luxury with zero-edge views & integrated smart-concierge technology.',
         gradient: [Color(0xFF3E4A63), Color(0xFF1B2436)],
+        imageAsset: AppImages.harbourTowerDusk,
         stats: [
           PropertyStat(value: 'AED 2.4M', label: 'Starting From'),
           PropertyStat(value: '8.4%', label: 'Yield Projection'),

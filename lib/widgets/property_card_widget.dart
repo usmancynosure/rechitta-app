@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import 'asset_image_or.dart';
 
 /// A property showcase card — hero render, title, blurb and headline stats.
 /// Mirrors the "Architectural Mastery" card from the product mockups.
@@ -25,10 +26,13 @@ class PropertyCardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero render placeholder (stand-in for the building photo).
+          // Hero render — real image when present, painted facade otherwise.
           AspectRatio(
             aspectRatio: 16 / 10,
-            child: _RenderPlaceholder(colors: data.gradient),
+            child: AssetImageOr(
+              asset: data.imageAsset,
+              fallback: _RenderPlaceholder(colors: data.gradient),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),

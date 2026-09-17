@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import 'floor_plan_card_widget.dart';
 import 'property_card_widget.dart';
 import 'roi_card_widget.dart';
 
@@ -58,6 +59,7 @@ class ChatBubble extends StatelessWidget {
 
   Widget _buildAttachment(MessageAttachment a) {
     if (a is PropertyCard) return PropertyCardWidget(data: a);
+    if (a is FloorPlanCard) return FloorPlanCardWidget(data: a);
     if (a is RoiCard) return RoiCardWidget(data: a);
     return const SizedBox.shrink();
   }

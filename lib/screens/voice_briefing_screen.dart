@@ -7,6 +7,7 @@ import '../widgets/glowing_orb.dart';
 import '../widgets/language_picker.dart';
 import '../widgets/message_input_bar.dart';
 import '../widgets/suggestion_chips.dart';
+import 'project_overview_screen.dart';
 
 /// The signature Rechitta screen: a voice-driven AI briefing you can read,
 /// interrupt and question — with property and analytics cards inline.
@@ -98,8 +99,13 @@ class _VoiceBriefingScreenState extends State<VoiceBriefingScreen> {
           _Header(
             projectName: MockData.projectName,
             language: _language,
-            onBack: () {},
+            onBack: () => Navigator.of(context).maybePop(),
             onLanguage: _pickLanguage,
+            onViewProject: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const ProjectOverviewScreen(),
+              ),
+            ),
           ),
           Expanded(
             child: ListView(
@@ -134,12 +140,14 @@ class _Header extends StatelessWidget {
     required this.language,
     required this.onBack,
     required this.onLanguage,
+    required this.onViewProject,
   });
 
   final String projectName;
   final String language;
   final VoidCallback onBack;
   final VoidCallback onLanguage;
+  final VoidCallback onViewProject;
 
   @override
   Widget build(BuildContext context) {
@@ -157,11 +165,21 @@ class _Header extends StatelessWidget {
             // Centered orb.
             const GlowingOrb(size: 42),
             Positioned(
-              left: 8,
-              child: IconButton(
-                onPressed: onBack,
-                icon: const Icon(Icons.chevron_left_rounded,
-                    color: AppColors.textSecondary, size: 28),
+              left: 4,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: onBack,
+                    icon: const Icon(Icons.chevron_left_rounded,
+                        color: AppColors.textSecondary, size: 28),
+                  ),
+                  IconButton(
+                    onPressed: onViewProject,
+                    tooltip: 'View project',
+                    icon: const Icon(Icons.view_carousel_outlined,
+                        color: AppColors.textSecondary, size: 20),
+                  ),
+                ],
               ),
             ),
             Positioned(

@@ -30,12 +30,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ASSETS = REPO_ROOT / "assets" / "images"
 
-# Preferred model first; the script falls back to the next if one is unavailable
-# for your API key / region.
+# Gemini image models used through generate_content (Developer API / AI Studio
+# keys). Imagen's generate_images endpoint is Vertex-only, so we use these.
+# The script falls back to the next model if one is unavailable for your key.
 DEFAULT_MODELS = [
-    "imagen-4.0-generate-001",
-    "imagen-3.0-generate-002",
-    "imagen-3.0-generate-001",
+    "gemini-2.5-flash-image",
+    "gemini-2.5-flash-image-preview",
+    "gemini-2.0-flash-preview-image-generation",
 ]
 
 # A shared style suffix keeps every image on-brand.
@@ -132,36 +133,59 @@ def make_client(api_key: str):
 
 # ---- Generation ------------------------------------------------------------
 
+def _build_config(types, aspect: str):
+    """GenerateContentConfig requesting an image, with aspect ratio when the
+    installed SDK supports image_config (older versions do not)."""
+    kwargs = {
+        "response_modalities": ["IMAGE"],
+    }
+    try:
+        kwargs["image_config"] = types.ImageConfig(aspect_ratio=aspect)
+    except (AttributeError, TypeError):
+        pass  # older SDK: aspect ratio is steered via the prompt text instead
+    try:
+        return types.GenerateContentConfig(**kwargs)
+    except TypeError:
+        # response_modalities unsupported name? fall back to minimal config.
+        return types.GenerateContentConfig(response_modalities=["IMAGE"])
+
+
+def _extract_image_bytes(resp) -> bytes | None:
+    for cand in getattr(resp, "candidates", None) or []:
+        content = getattr(cand, "content", None)
+        for part in getattr(content, "parts", None) or []:
+            inline = getattr(part, "inline_data", None)
+            if inline is not None and getattr(inline, "data", None):
+                return inline.data
+    return None
+
+
 def generate_one(client, models: list[str], prompt: str, aspect: str, out_path: Path) -> bool:
     """Try each model until one succeeds. Returns True on success."""
     from google.genai import types
 
-    full_prompt = f"{prompt}. {BRAND_STYLE}."
+    # Steer composition via text too, since not every SDK/model honours
+    # image_config aspect ratios.
+    full_prompt = (
+        f"{prompt}. {BRAND_STYLE}. Composition aspect ratio {aspect}. "
+        f"Avoid: {NEGATIVE}."
+    )
     last_err: Exception | None = None
 
     for model in models:
         try:
-            resp = client.models.generate_images(
+            resp = client.models.generate_content(
                 model=model,
-                prompt=full_prompt,
-                config=types.GenerateImagesConfig(
-                    number_of_images=1,
-                    aspect_ratio=aspect,
-                    negative_prompt=NEGATIVE,
-                    person_generation="dont_allow",
-                ),
+                contents=full_prompt,
+                config=_build_config(types, aspect),
             )
-            if not resp.generated_images:
-                last_err = RuntimeError("no images returned (possibly filtered)")
+            data = _extract_image_bytes(resp)
+            if not data:
+                last_err = RuntimeError("no image in response (possibly filtered)")
                 continue
 
-            image = resp.generated_images[0].image
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            data = getattr(image, "image_bytes", None)
-            if data:
-                out_path.write_bytes(data)
-            else:
-                image.save(str(out_path))  # SDK helper fallback
+            out_path.write_bytes(data)
             print(f"  ✓ {out_path.relative_to(REPO_ROOT)}  ({model}, {aspect})")
             return True
         except Exception as exc:  # noqa: BLE001 - surface and try next model
